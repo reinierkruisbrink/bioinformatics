@@ -32,7 +32,7 @@ def dom_pheno(s):
             continue
         else: # one heterozygous, one homozygous recessive -> 50% chance of dominant
            dom += 0.5
-    dom_prob = "{:.5f}".format(dom / len(pairs))
+    dom_prob = f"{(dom / len(pairs)):.5f}"
     return dom_prob
 
 # Sample Test
