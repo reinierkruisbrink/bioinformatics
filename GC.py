@@ -9,7 +9,7 @@ Rosalind allows for a default error of 0.001 in all decimal answers unless other
 
 # Imports
 import os
-import re
+from utils import parse_FASTA
 
 # Get the problem name
 problem = __file__.split('\\')[-1][:-3].lower()
@@ -17,11 +17,8 @@ print(f"problem: {problem}\n")
 
 # Solution
 def gc_content(s):
-    # Parse FASTA
-    s = re.sub('\n', '', s).split('>')[1:]
-    FASTAs = {k[:13]:k[13:] for k in s}
-    # Comput GC content
-    GCs = {k:(v.count('G') + v.count('C')) / (len(v)+1e-6) * 100 for k, v in FASTAs.items()}
+    # Compute GC content
+    GCs = {k:(v.count('G') + v.count('C')) / (len(v)+1e-6) * 100 for k, v in s.items()}
     # Return max GC content
     GC_content_argmax = max(GCs, key=GCs.get)
     GC_content_max = GCs[GC_content_argmax]
@@ -37,7 +34,7 @@ ATATCCATTTGTCAGCAGACACGC
 >Rosalind_0808
 CCACCCTCGTGGTATGGCTAGGCATTCAGGAACCGGAGAACGCTTCAGACCAGCCCGGAC
 TGGGAACCTGCGGGCAGTAGGTGGAAT"""
-sample_output = gc_content(sample_data)
+sample_output = gc_content(parse_FASTA(sample_data))
 sample_answer = """Rosalind_0808
 60.919540"""
 assert sample_output == sample_answer
@@ -48,7 +45,8 @@ data_file = f"data/rosalind_{problem}.txt"
 if os.path.exists(data_file):
     with open(data_file) as f:
         data = ''.join(f.readlines())
-    answer = gc_content(data)
+    fasta_dict = parse_FASTA(data)
+    answer = gc_content(fasta_dict)
     print(answer, '\n')
 else:
     print('input file not found\n')
