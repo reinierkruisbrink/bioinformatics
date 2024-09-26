@@ -1,3 +1,4 @@
+import itertools
 from collections import Counter
 from Bio.Seq import Seq
 
@@ -81,8 +82,11 @@ def CountingPeptides(n=1024):
 def CountingSubpeptides(n=4):
     return sum([i for i in range(n+1)]) + 1
 
-def Expand(peptides):
-    mass_list = list(set(A2M.values()))
+def Expand(peptides, extended=False):
+    if extended:
+        mass_list = list(range(57, 201))
+    else:
+        mass_list = list(set(A2M.values()))
     expanded_peptides = set()
     for p in peptides:
         if p == '':
@@ -144,3 +148,74 @@ def CyclopeptideSequencing(spectrum='0 113 128 186 241 299 314 427'):
         for p in deletions:
                 candidate_peptides.remove(p)
     return sorted(final_peptides)[::-1]
+
+def CyclopeptideScoring(peptide='NQEL', spectrum='0 99 113 114 128 227 257 299 355 356 370 371 484'):
+    if peptide == '':
+        return 0
+    spectrum = [int(i) for i in spectrum.split()]
+    spectrum_dict = Counter(spectrum)
+    # aa_list = [A2M[aa] for aa in peptide] #peptide string
+    aa_list = [int(aa) for aa in peptide.split('-')] #mass list
+    candidate_spectrum_dict = CycloSpectrum(aa_list)
+    score = 0
+    for key, value in candidate_spectrum_dict.items():
+        score += min(value, spectrum_dict.get(key, 0))
+    return score
+
+def LinearScore(peptide='NQEL', spectrum='0 99 113 114 128 227 257 299 355 356 370 371 484'):
+    spectrum = [int(i) for i in spectrum.split()]
+    spectrum_dict = Counter(spectrum)
+    # aa_list = [A2M[aa] for aa in peptide] #peptide string
+    aa_list = [int(aa) for aa in peptide.split('-')] #mass list
+    candidate_spectrum_dict = LineoSpectrum(aa_list)
+    score = 0
+    for key, value in candidate_spectrum_dict.items():
+        score += min(value, spectrum_dict.get(key, 0))
+    return score
+
+def Trim(leaderboard='LAST ALST TLLT TQAS', spectrum='0 71 87 101 113 158 184 188 259 271 372', n=2):
+    linear_scores = [(peptide, LinearScore(peptide, spectrum)) for peptide in leaderboard.split()]
+    linear_scores.sort(key=lambda x: x[1], reverse=True)
+    return set([peptide for peptide, _ in linear_scores[:n]])
+
+def LeaderboardCyclopeptideSequencing(n=10, spectrum='0 71 113 129 147 200 218 260 313 331 347 389 460', extended=False, parent_mass=None):
+    if parent_mass is None:
+        parent_mass = max([int(i) for i in spectrum.split()])
+    leaderboard = {''}
+    leader_peptide = ['']
+    best_score = 0
+    while len(leaderboard) > 0:
+        leaderboard = Expand(leaderboard, extended=extended)
+        deletions = []
+        for peptide in leaderboard:
+            aa_list = [int(aa) for aa in peptide.split('-')]
+            if sum(aa_list) == parent_mass:
+                peptide_score = CyclopeptideScoring(peptide, spectrum)
+                if peptide_score > best_score:
+                    leader_peptide = [peptide]
+                    best_score = peptide_score
+                elif peptide_score == best_score:
+                    leader_peptide.append(peptide)
+            elif sum(aa_list) > parent_mass:
+                deletions.append(peptide)
+        for peptide in deletions: 
+            leaderboard.remove(peptide)
+        leaderboard = Trim(' '.join(leaderboard), spectrum, n)
+    return leader_peptide
+
+def SpectralConvolution(spectrum='0 137 186 323'):
+    spectrum = [int(i) for i in spectrum.split()]
+    convolution = [str(abs(m1-m2)) for m1, m2 in itertools.combinations(spectrum, 2) if m1-m2 != 0]
+    return convolution
+
+def ConvolutionCyclopeptideSequencing(m=20, n=60, spectrum='57 57 71 99 129 137 170 186 194 208 228 265 285 299 307 323 356 364 394 422 493'):
+    parent_mass = max([int(i) for i in spectrum.split()])
+    spectral_convolution = sorted(Counter(SpectralConvolution(spectrum)).items(), key=lambda x: x[1], reverse=True)
+    print(spectral_convolution)
+    min_multiplicity = spectral_convolution[m-1][1]
+    spectrum = ''
+    for mass, multiplicity in spectral_convolution:
+        if multiplicity >= min_multiplicity and int(mass) >= 57 and int(mass) < 200:
+            spectrum += (mass + ' ') * multiplicity
+    print(spectrum)
+    return LeaderboardCyclopeptideSequencing(n, spectrum, extended=True, parent_mass=parent_mass)

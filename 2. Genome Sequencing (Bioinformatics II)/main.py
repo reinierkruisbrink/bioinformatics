@@ -1,7 +1,7 @@
 from dna_sequencing import *
 from peptides_sequencing import *
 
-TASK = 'CyclopeptideSequencing'
+TASK = 'ConvolutionCyclopeptideSequencing'
 
 if __name__ == "__main__":
     if TASK == 'Composition':
@@ -147,9 +147,55 @@ if __name__ == "__main__":
             data = f.readlines()
             result = ' '.join(CyclopeptideSequencing(data[0].strip()))
             print(result)
+    elif TASK == 'CyclopeptideScoring':
+        sample_result = str(CyclopeptideScoring())
+        assert "11" == sample_result
+        with open(f'data/{TASK}.txt') as f:
+            data = f.readlines()
+            result = str(CyclopeptideScoring(data[0].strip(), data[1].strip()))
+            print(result)
+    elif TASK == 'LinearScore':
+        sample_result = str(LinearScore())
+        assert "8" == sample_result
+        with open(f'data/{TASK}.txt') as f:
+            data = f.readlines()
+            result = str(LinearScore(data[0].strip(), data[1].strip()))
+            print(result)
+    elif TASK == 'Trim':
+        sample_result = ' '.join(Trim())
+        assert "LAST ALST" == sample_result
+        with open(f'data/{TASK}.txt') as f:
+            data = f.readlines()
+            result = ' '.join((Trim(data[0].strip(), data[1].strip(), int(data[2].strip()))))
+            print(result)
+    elif TASK == 'LeaderboardCyclopeptideSequencing':
+        sample_result = LeaderboardCyclopeptideSequencing()
+        print(sample_result)
+        # assert "113-147-71-129" == sample_result
+        with open(f'data/{TASK}.txt') as f:
+            data = f.readlines()
+            result = '\n'.join(LeaderboardCyclopeptideSequencing(int(data[0].strip()), data[1].strip()))
+            print(result)
+    elif TASK == 'SpectralConvolution':
+        sample_result = ' '.join(SpectralConvolution())
+        assert "137 186 323 49 186 137" == sample_result
+        with open(f'data/{TASK}.txt') as f:
+            data = f.readlines()
+            result = ' '.join(SpectralConvolution(data[0].strip()))
+            print(result)
+    elif TASK == 'ConvolutionCyclopeptideSequencing':
+        sample_result = ConvolutionCyclopeptideSequencing()
+        print(sample_result)
+        assert "99-71-137-57-72-57" == sample_result
+        with open(f'data/{TASK}.txt') as f:
+            data = f.readlines()
+            result = ConvolutionCyclopeptideSequencing(int(data[0].strip()), int(data[1].strip()), data[2].strip())
+            print(result)
 
     else:
         print("Invalid task")
+
+
 
     with open('data/output_file.txt', 'w') as f:
         f.write(result)
